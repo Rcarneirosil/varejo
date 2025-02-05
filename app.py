@@ -24,7 +24,7 @@ plt.rcParams["savefig.facecolor"] = "#0E1117"
 st.title("📊 Análise de Vendas de Produtos")
 
 # URL do arquivo CSV no GitHub (SUBSTITUA COM O LINK CORRETO)
-csv_url = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/entrada.csv"
+csv_url = "https://github.com/Rcarneirosil/varejo/blob/main/entrada.csv"
 
 # Tentar carregar o arquivo CSV diretamente do GitHub
 try:
