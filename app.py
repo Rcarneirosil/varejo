@@ -36,44 +36,52 @@ try:
     # Criar colunas para organizar o layout
     col1, col2 = st.columns([2, 1])
 
-    with col1:
+   with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
 
-        # Calcular o total de vendas por produto (independente da UF) e selecionar os 10 mais vendidos
+        # 1️⃣ - Calcular o total de vendas por produto (independente da UF)
         total_vendas_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().reset_index()
-        top_10_produtos = total_vendas_produtos.nlargest(10, "SaleQt").sort_values("SaleQt", ascending=False)["Aparelho"]
 
-        # Filtrar apenas esses produtos no dataset original
-        df_top = entrada[entrada["Aparelho"].isin(top_10_produtos)]
-
-        # Agrupar corretamente por produto e UF para criar o gráfico empilhado
-        df_top = df_top.groupby(["Aparelho", "UF"])["SaleQt"].sum().reset_index()
-
-        # Garantir que os produtos estejam ordenados corretamente no eixo Y
-        df_top["Aparelho"] = pd.Categorical(df_top["Aparelho"], categories=top_10_produtos, ordered=True)
-    
-        # Ordenar o DataFrame final para garantir a plotagem correta
-        df_top = df_top.sort_values(by=["Aparelho", "UF"], ascending=[True, False])
-
-        # Criar gráfico empilhado de vendas por UF
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(
-            data=df_top,
-            x="SaleQt",
-            y="Aparelho",
-            hue="UF",  # 🔥 Agora sim funciona, pois temos UF no dataset
-            palette="coolwarm",
-            estimator=sum,
-            ci=None,
-            dodge=False,  # 🔥 Faz as barras ficarem empilhadas
-            ax=ax,
+        # 2️⃣ - Selecionar os Top 10 produtos mais vendidos (ordenados corretamente)
+        top_10_produtos = (
+            total_vendas_produtos
+            .nlargest(10, "SaleQt")  # Pega os 10 maiores
+            .sort_values("SaleQt", ascending=True)  # 🔥 Inverter a ordem para gráfico horizontal correto
+            ["Aparelho"]
+            .tolist()
         )
 
-        ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
-        ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
-        ax.set_ylabel("Aparelho", fontsize=12, color="white")
-        plt.legend(title="UF", loc="lower right", fontsize=10)
+        # 3️⃣ - Filtrar apenas esses produtos no dataset original
+        df_top = entrada[entrada["Aparelho"].isin(top_10_produtos)]
+
+        # 4️⃣ - Criar tabela pivotada para organizar os dados corretamente
+        df_pivot = df_top.pivot_table(index="Aparelho", columns="UF", values="SaleQt", aggfunc="sum").fillna(0)
+
+        # 5️⃣ - Garantir que os produtos estejam ordenados corretamente no gráfico
+        df_pivot = df_pivot.loc[top_10_produtos]
+
+        # 6️⃣ - Ordenar as UFs da maior para a menor para que a maior fique na BASE das barras
+        ufs_ordenadas = df_pivot.sum(axis=0).sort_values(ascending=False).index  # 🔥 UFs com mais vendas primeiro
+
+        # 7️⃣ - Reorganizar a pivot_table para seguir essa ordem de UFs
+        df_pivot = df_pivot[ufs_ordenadas]
+
+        # 8️⃣ - Criar gráfico de barras empilhadas
+        fig, ax = plt.subplots(figsize=(10, 6))
+        df_pivot.plot(kind="barh", stacked=True, colormap="coolwarm", ax=ax)
+
+        # 9️⃣ - Ajustar título e rótulos
+        ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="black")
+        ax.set_xlabel("Quantidade Vendida", fontsize=12, color="black")
+        ax.set_ylabel("Aparelho", fontsize=12, color="black")
+
+        # 🔟 - Ajustar a legenda dentro do gráfico
+        plt.legend(title="UF", loc="lower right", fontsize=10, bbox_to_anchor=(1.0, 0.0))
+
+        # 🔥 Ajustar layout para evitar cortes
         plt.tight_layout()
+
+        # 🔥 Exibir o gráfico no Streamlit
         st.pyplot(fig)
 
 
