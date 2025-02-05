@@ -65,7 +65,7 @@ if uploaded_file is not None:
     tabela_completa = tabela_completa.rename(columns={'SaleQt': 'Qty'})
 
     # Calcular a margem de estoque SMS%
-    tabela_completa['SMS%'] = 1 - (tabela_completa['Cost_Custo'] / tabela_completa['Price_Preço'])
+    tabela_completa['SMS%'] = 1 - (tabela_completa['Cost'] / tabela_completa['Price'])
 
     # Formatar a tabela para exibir valores com duas casas decimais
     tabela_completa = tabela_completa.round(2)
