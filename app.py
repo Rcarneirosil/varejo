@@ -3,6 +3,21 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import matplotlib.pyplot as plt
+
+# Configurar fundo escuro e textos claros
+plt.rcParams["figure.facecolor"] = "#0E1117"  # Fundo dos gráficos
+plt.rcParams["axes.facecolor"] = "#0E1117"  # Fundo dos eixos
+plt.rcParams["axes.edgecolor"] = "white"  # Cor das bordas do gráfico
+plt.rcParams["axes.labelcolor"] = "white"  # Cor dos rótulos dos eixos
+plt.rcParams["xtick.color"] = "white"  # Cor dos ticks do eixo X
+plt.rcParams["ytick.color"] = "white"  # Cor dos ticks do eixo Y
+plt.rcParams["text.color"] = "white"  # Cor do texto dentro dos gráficos
+plt.rcParams["legend.edgecolor"] = "white"  # Cor da borda da legenda
+plt.rcParams["grid.color"] = "#444444"  # Cor da grade (opcional, cinza escuro)
+plt.rcParams["savefig.facecolor"] = "#0E1117"  # Fundo ao salvar imagens
+
+
 # Título do aplicativo
 st.title("Análise de Vendas de Produtos")
 
