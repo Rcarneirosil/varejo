@@ -23,14 +23,15 @@ plt.rcParams["savefig.facecolor"] = "#0E1117"
 # Título do aplicativo
 st.title("📊 Análise de Vendas de Produtos")
 
-# URL do arquivo CSV no GitHub (SUBSTITUA COM O LINK CORRETO)
-csv_url = "https://github.com/Rcarneirosil/varejo/blob/main/entrada.csv"
+# URL do arquivo CSV no GitHub (corrigida para o formato correto)
+csv_url = "https://raw.githubusercontent.com/Rcarneirosil/varejo/main/entrada.csv"
 
 # Tentar carregar o arquivo CSV diretamente do GitHub
 try:
-     entrada = pd.read_csv(csv_url, sep=",", encoding="utf-8")
-     entrada.columns = entrada.columns.str.strip()
-     st.success("Dados carregados com sucesso!")
+    entrada = pd.read_csv(csv_url, sep=",", encoding="utf-8")
+    entrada.columns = entrada.columns.str.strip()
+    st.success("✅ Dados carregados com sucesso!")
+
     # Criar colunas para organizar o layout
     col1, col2 = st.columns([2, 1])  # Mantendo layout original
 
