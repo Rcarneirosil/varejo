@@ -29,7 +29,8 @@ csv_url = "https://github.com/Rcarneirosil/varejo/blob/main/entrada.csv"
 # Tentar carregar o arquivo CSV diretamente do GitHub
 try:
      entrada = pd.read_csv(csv_url, sep=",", encoding="utf-8")
-
+     entrada.columns = entrada.columns.str.strip()
+     st.success("Dados carregados com sucesso!")
     # Criar colunas para organizar o layout
     col1, col2 = st.columns([2, 1])  # Mantendo layout original
 
