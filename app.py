@@ -37,7 +37,7 @@ try:
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.subheader("📊 Top 10 Produtos Mais Vendidos por UF")
+        st.subheader("📊 Top 10 Produtos Mais Vendidos por UF (Ordenado)")
 
         # Selecionar os 10 produtos mais vendidos
         total_vendas_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().reset_index()
@@ -49,8 +49,8 @@ try:
         # Criar tabela pivotada para organizar os dados corretamente
         df_pivot = df_top.pivot_table(index="Aparelho", columns="UF", values="SaleQt", aggfunc="sum").fillna(0)
 
-        # Garantir que os produtos estejam ordenados corretamente
-        df_pivot = df_pivot.loc[top_10_produtos]
+        # Garantir que os produtos estejam ordenados corretamente em ordem decrescente
+        df_pivot = df_pivot.loc[top_10_produtos[::-1]]
 
         # Ordenar as UFs da maior para a menor para que a maior fique na BASE das barras
         ufs_ordenadas = df_pivot.sum(axis=0).sort_values(ascending=False).index
@@ -108,7 +108,7 @@ try:
     col3, col4 = st.columns([2, 1])
 
     with col3:
-        st.subheader("🔍 Análise Completa por UF")
+        st.subheader("🔍 Análise de Precificação Ótima por UF")
         uf_selecionada = st.selectbox("Escolha uma UF para análise:", sorted(entrada["UF"].unique()))
 
         df_uf = entrada[entrada["UF"] == uf_selecionada]
@@ -123,7 +123,33 @@ try:
 
         tabela_otimizada["Margem"] = 1 - (tabela_otimizada["Custo_Total"] / tabela_otimizada["Faturamento_Total"])
 
-        st.write(f"📊 Análise de Margem e Faturamento para Produtos na UF **{uf_selecionada}**")
+        # Modelo de regressão linear para precificação ótima
+        tabela_otimizada["Price Optimal"] = np.nan
+        tabela_otimizada["New Qty"] = np.nan
+        tabela_otimizada["New Revenue"] = np.nan
+
+        for i, row in tabela_otimizada.iterrows():
+            data_produto = df_uf[df_uf["Aparelho"] == row["Aparelho"]]
+
+            if len(data_produto) > 2:
+                X = data_produto["Price"].values.reshape(-1, 1)
+                y = data_produto["SaleQt"].values.reshape(-1, 1)
+
+                model = LinearRegression()
+                model.fit(X, y)
+
+                intercept = model.intercept_[0]
+                slope = model.coef_[0][0]
+
+                price_optimal = -intercept / (2 * slope)
+                new_qty = intercept + slope * price_optimal
+                new_revenue = new_qty * price_optimal
+
+                tabela_otimizada.at[i, "Price Optimal"] = round(price_optimal, 2)
+                tabela_otimizada.at[i, "New Qty"] = round(new_qty, 0)
+                tabela_otimizada.at[i, "New Revenue"] = round(new_revenue, 2)
+
+        st.write(f"📊 Precificação Ótima e Margem para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
     with col4:
@@ -137,31 +163,13 @@ try:
 
         df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
 
-        def top_produtos_margem(uf):
-            df_uf = entrada[entrada["UF"] == uf]
-            top_prod = (
-                df_uf.groupby("Aparelho").agg(
-                    Faturamento=("SaleAmt", "sum"),
-                    Margem=("SaleCostAmt", "sum")
-                )
-            )
-            top_prod["Margem"] = 1 - (top_prod["Margem"] / df_uf.groupby("Aparelho")["SaleAmt"].sum())
-
-            ## 🔥 **Critério Melhorado**: Ordenamos por impacto total (Margem * Faturamento)
-            top_prod["Impacto_Margem"] = top_prod["Margem"] * top_prod["Faturamento"]
-            top_prod = top_prod.sort_values("Impacto_Margem", ascending=False).head(3)
-
-            return "<br>".join([f"{prod}: {margem:.2%}" for prod, margem in zip(top_prod.index, top_prod["Margem"])])
-
-        df_bolhas["Produtos"] = df_bolhas["UF"].apply(top_produtos_margem)
-
         fig = px.scatter(
             df_bolhas,
             x="Volume_Vendas",
             y="Faturamento_Total",
             size="Margem_Total",
             text="UF",
-            hover_data={"Produtos": True, "Margem_Total": ":.2%"},
+            hover_data={"Margem_Total": ":.2%"},
             title="Faturamento x Volume de Vendas",
             height=600
         )
