@@ -33,6 +33,50 @@ try:
     entrada.columns = entrada.columns.str.strip()
     st.success("✅ Dados carregados com sucesso!")
 
+    # Criar colunas para organizar o layout
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.subheader("📊 Gráfico de Produtos Mais Vendidos")
+        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.barplot(y=top_produtos.head(10).index, x=top_produtos.head(10).values, palette="coolwarm", ax=ax)
+        ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
+        ax.set_title("Top 10 Produtos Mais Vendidos", fontsize=14, color="white")
+        ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
+        ax.set_ylabel("Aparelho", fontsize=12, color="white")
+        plt.tight_layout()
+        st.pyplot(fig)
+
+    with col2:
+        st.subheader("📋 Tabela de Produtos por UF")
+        produto_selecionado = st.selectbox(
+            "Selecione um produto:",
+            entrada["Aparelho"].unique()
+        )
+
+        df_produto = entrada[entrada['Aparelho'] == produto_selecionado]
+
+        preco_medio_produto = df_produto['Price'].mean()
+        custo_medio_produto = df_produto['Cost'].mean()
+
+        st.write(f"💰 **Preço Médio:** R$ {preco_medio_produto:.2f}")
+        st.write(f"📉 **Custo Médio:** R$ {custo_medio_produto:.2f}")
+
+        tabela_completa = (
+            df_produto.groupby('UF').agg(
+                Price=("Price", "mean"),
+                Cost=("Cost", "mean"),
+                Qty=("SaleQt", "sum")
+            )
+        ).reset_index()
+
+        tabela_completa['SMS%'] = 1 - (tabela_completa['Cost'] / tabela_completa['Price'])
+        tabela_completa = tabela_completa.round(2)
+
+        st.write(f"📊 Dados por UF para **{produto_selecionado}**")
+        st.dataframe(tabela_completa, height=400)
+
     # Criar a terceira coluna para exibir a análise de preços ótimos + margem
     col3, _ = st.columns([2, 1])
 
@@ -86,7 +130,6 @@ try:
                 tabela_otimizada.at[i, "New Revenue"] = round(new_revenue, 2)
                 tabela_otimizada.at[i, "Elasticity"] = round(elasticity, 2)
 
-        # Exibir a tabela atualizada com os cálculos corrigidos
         st.write(f"📊 Análise de Precificação Ótima, Margem e Faturamento para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
