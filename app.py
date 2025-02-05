@@ -72,7 +72,7 @@ try:
         ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
         ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
         ax.set_ylabel("Aparelho", fontsize=12, color="white")
-        plt.legend(title="UF", loc="upper right", fontsize=10)
+        plt.legend(title="UF", loc="bottom right", fontsize=10)
         plt.tight_layout()
         st.pyplot(fig)
 
