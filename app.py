@@ -165,7 +165,7 @@ try:
             text="UF",
             hover_data={"Produtos": True, "Margem_Total": ":.2%"},
             title="Faturamento x Volume de Vendas",
-            height=400
+            height=600
         )
 
         st.plotly_chart(fig, use_container_width=True)
