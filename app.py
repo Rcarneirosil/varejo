@@ -164,10 +164,11 @@ try:
             size="Margem_Total",
             text="UF",
             hover_data={"Produtos": True, "Margem_Total": ":.2%"},
-            title="Faturamento x Volume de Vendas"
+            title="Faturamento x Volume de Vendas",
+            height=400
         )
 
         st.plotly_chart(fig, use_container_width=True)
-
+ 
 except Exception as e:
     st.error(f"❌ Erro ao carregar os dados: {e}")
