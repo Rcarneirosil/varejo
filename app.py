@@ -36,12 +36,12 @@ try:
     # Criar colunas para organizar o layout
     col1, col2 = st.columns([2, 1])
 
-    with col1:
+        with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
 
         # Calcular o total de vendas por produto (independente da UF) e selecionar os 10 mais vendidos
         total_vendas_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().reset_index()
-        top_10_produtos = total_vendas_produtos.nlargest(10, "SaleQt")["Aparelho"]
+        top_10_produtos = total_vendas_produtos.nlargest(10, "SaleQt").sort_values("SaleQt", ascending=False)["Aparelho"]
 
         # Filtrar apenas esses produtos no dataset original
         df_top = entrada[entrada["Aparelho"].isin(top_10_produtos)]
@@ -49,8 +49,11 @@ try:
         # Agrupar corretamente por produto e UF para criar o gráfico empilhado
         df_top = df_top.groupby(["Aparelho", "UF"])["SaleQt"].sum().reset_index()
 
-        # Ordenar os produtos pelo total de vendas no dataset filtrado
+        # Garantir que os produtos estejam ordenados corretamente no eixo Y
         df_top["Aparelho"] = pd.Categorical(df_top["Aparelho"], categories=top_10_produtos, ordered=True)
+    
+        # Ordenar o DataFrame final para garantir a plotagem correta
+        df_top = df_top.sort_values(by=["Aparelho", "UF"], ascending=[True, False])
 
         # Criar gráfico empilhado de vendas por UF
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -72,6 +75,7 @@ try:
         plt.legend(title="UF", loc="upper right", fontsize=10)
         plt.tight_layout()
         st.pyplot(fig)
+
 
     with col2:
         st.subheader("📋 Tabela de Produtos por UF")
