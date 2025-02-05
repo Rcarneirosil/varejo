@@ -37,25 +37,42 @@ try:
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
+        st.subheader("📊 Top 10 Produtos Mais Vendidos por UF")
 
-        top_produtos = entrada.groupby(["Aparelho", "UF"])["SaleQt"].sum().reset_index()
+        # Selecionar os 10 produtos mais vendidos
+        total_vendas_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().reset_index()
+        top_10_produtos = total_vendas_produtos.nlargest(10, "SaleQt")["Aparelho"].tolist()
 
+        # Filtrar apenas esses produtos no dataset
+        df_top = entrada[entrada["Aparelho"].isin(top_10_produtos)]
+
+        # Criar tabela pivotada para organizar os dados corretamente
+        df_pivot = df_top.pivot_table(index="Aparelho", columns="UF", values="SaleQt", aggfunc="sum").fillna(0)
+
+        # Garantir que os produtos estejam ordenados corretamente
+        df_pivot = df_pivot.loc[top_10_produtos]
+
+        # Ordenar as UFs da maior para a menor para que a maior fique na BASE das barras
+        ufs_ordenadas = df_pivot.sum(axis=0).sort_values(ascending=False).index
+
+        # Reorganizar a pivot_table para seguir essa ordem de UFs
+        df_pivot = df_pivot[ufs_ordenadas]
+
+        # Criar gráfico de barras empilhadas
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(
-            data=top_produtos,
-            y="Aparelho",
-            x="SaleQt",
-            hue="UF",
-            palette="coolwarm",
-            ax=ax
-        )
+        df_pivot.plot(kind="barh", stacked=True, colormap="coolwarm", ax=ax)
 
-        ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
         ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
         ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
         ax.set_ylabel("Aparelho", fontsize=12, color="white")
+
+        # Ajustar a legenda dentro do gráfico
+        plt.legend(title="UF", loc="lower right", fontsize=10, bbox_to_anchor=(1.0, 0.0))
+
+        # Ajustar layout para evitar cortes
         plt.tight_layout()
+
+        # Exibir o gráfico no Streamlit
         st.pyplot(fig)
 
     with col2:
@@ -87,7 +104,7 @@ try:
         st.write(f"📊 Dados por UF para **{produto_selecionado}**")
         st.dataframe(tabela_completa, height=400)
 
-    # Criar uma nova linha de colunas para incluir o gráfico de bolhas na col4
+    # Criar colunas para análise detalhada
     col3, col4 = st.columns([2, 1])
 
     with col3:
@@ -106,7 +123,7 @@ try:
 
         tabela_otimizada["Margem"] = 1 - (tabela_otimizada["Custo_Total"] / tabela_otimizada["Faturamento_Total"])
 
-        st.write(f"📊 Análise de Precificação Ótima, Margem e Faturamento para Produtos na UF **{uf_selecionada}**")
+        st.write(f"📊 Análise de Margem e Faturamento para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
     with col4:
@@ -122,7 +139,6 @@ try:
 
         def top_produtos_margem(uf):
             df_uf = entrada[entrada["UF"] == uf]
-
             top_prod = (
                 df_uf.groupby("Aparelho").agg(
                     Faturamento=("SaleAmt", "sum"),
@@ -131,9 +147,8 @@ try:
             )
             top_prod["Margem"] = 1 - (top_prod["Margem"] / df_uf.groupby("Aparelho")["SaleAmt"].sum())
 
-            ## **Novo Critério**: Multiplicamos margem x faturamento para pegar os mais relevantes
+            ## 🔥 **Critério Melhorado**: Ordenamos por impacto total (Margem * Faturamento)
             top_prod["Impacto_Margem"] = top_prod["Margem"] * top_prod["Faturamento"]
-
             top_prod = top_prod.sort_values("Impacto_Margem", ascending=False).head(3)
 
             return "<br>".join([f"{prod}: {margem:.2%}" for prod, margem in zip(top_prod.index, top_prod["Margem"])])
