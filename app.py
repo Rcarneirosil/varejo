@@ -99,10 +99,10 @@ try:
         ).reset_index()
 
         # Adicionar colunas vazias para cálculos
-        tabela_otimizada["Preço Ótimo"] = np.nan
-        tabela_otimizada["Nova Qtd"] = np.nan
-        tabela_otimizada["Nova Receita"] = np.nan
-        tabela_otimizada["Elasticidade"] = np.nan
+        tabela_otimizada["Price Optimal"] = np.nan
+        tabela_otimizada["New Qty"] = np.nan
+        tabela_otimizada["New Revenue"] = np.nan
+        tabela_otimizada["Elasticity"] = np.nan
 
         # Aplicar modelo de regressão para cada produto **usando df_uf, sem agrupamento**
         for i, row in tabela_otimizada.iterrows():
