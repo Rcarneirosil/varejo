@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.linear_model import LinearRegression
 
 # Expandir a tela para largura total
 st.set_page_config(layout="wide")
@@ -19,7 +21,7 @@ plt.rcParams["grid.color"] = "#444444"
 plt.rcParams["savefig.facecolor"] = "#0E1117"
 
 # Título do aplicativo
-st.title("📊 Análise de Vendas de Produtos")
+st.title("📊 Análise de Vendas de Produtos com Precificação Ótima")
 
 # Carregar o arquivo CSV
 uploaded_file = st.file_uploader("Carregue o arquivo 'entrada.csv'", type="csv")
@@ -27,80 +29,80 @@ uploaded_file = st.file_uploader("Carregue o arquivo 'entrada.csv'", type="csv")
 if uploaded_file is not None:
     entrada = pd.read_csv(uploaded_file)
 
-    #%% TOP SELLING PRODUCTS BASED ON TOTAL SALES QUANTITY
- #   st.header("Top 10 Produtos Mais Vendidos")
+    #%% Seleção de Estado (UF)
+    st.header("🔍 Selecione um Estado para Análise")
+    uf_selecionada = st.selectbox("Escolha uma UF:", sorted(entrada["UF"].unique()))
 
-    # Somar a quantidade total vendida por produto
-    top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)
+    # Filtrar os dados apenas para a UF selecionada
+    df_uf = entrada[entrada["UF"] == uf_selecionada]
 
-    # Criar colunas para dividir a visualização
-    col1, col2 = st.columns([2, 1])  # Mais espaço para o gráfico
+    #%% Criar colunas para exibir gráfico e tabela de preços ótimos
+    col1, col2 = st.columns([2, 1])  # Ajustando os tamanhos para melhor visualização
 
     with col1:
-        st.subheader("📊 Gráfico de Produtos Mais Vendidos")
+        st.subheader(f"📊 Vendas por Produto na UF {uf_selecionada}")
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(x=top_produtos.head(10).index, y=top_produtos.head(10).values, palette="coolwarm", ax=ax)
+        sns.barplot(data=df_uf, x="Aparelho", y="SaleQt", palette="coolwarm", ax=ax)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=10)
-        ax.set_title("Top 10 Produtos Mais Vendidos", fontsize=14, color="white")
-        ax.set_xlabel("Aparelho", fontsize=12, color="white")
+        ax.set_title(f"Vendas por Produto - {uf_selecionada}", fontsize=14, color="white")
+        ax.set_xlabel("Produto", fontsize=12, color="white")
         ax.set_ylabel("Quantidade Vendida", fontsize=12, color="white")
         plt.tight_layout()
         st.pyplot(fig)
 
-    #%% Análise de um produto específico
-    st.header("🔍 Análise de um Produto Específico")
-
-    # Criar colunas para dispor o gráfico ao lado da tabela do produto selecionado
-    col3, col4 = st.columns([1.5, 1])  # Mais espaço para o gráfico
-
     with col2:
-        # Selecionar o produto desejado
-        st.subheader("📋 Tabela de Produtos por UF")
-        produto_selecionado = st.selectbox(
-            "Selecione um produto:",
-            entrada["Aparelho"].unique()
-        )
+        st.subheader(f"📋 Resumo de Produtos na UF {uf_selecionada}")
+        st.write(f"🔹 Total de Produtos: {df_uf['Aparelho'].nunique()}")
+        st.write(f"📦 Total de Vendas: {df_uf['SaleQt'].sum()} unidades")
 
-        # Filtrar o DataFrame para o produto selecionado
-        df_produto = entrada[entrada['Aparelho'] == produto_selecionado]
+    #%% Cálculo do Preço Ótimo e Elasticidade-Preço da Demanda para todos os produtos
+    st.header(f"📊 Precificação Ótima e Elasticidade - {uf_selecionada}")
 
-        # Criar gráfico de vendas do produto por UF
-        vendas_por_uf = df_produto.groupby("UF")["SaleQt"].sum().reset_index()
+    # Criar tabela base com os produtos da UF
+    tabela_otimizada = df_uf.groupby("Aparelho").agg(
+        Price=("Price", "mean"),
+        Cost=("Cost", "mean"),
+        Qty=("SaleQt", "sum")
+    ).reset_index()
 
+    # Adicionar colunas vazias para cálculos
+    tabela_otimizada["Price Optimal"] = np.nan
+    tabela_otimizada["New Qty"] = np.nan
+    tabela_otimizada["New Revenue"] = np.nan
+    tabela_otimizada["Elasticity"] = np.nan
 
-   # with col4:
-        # Calcular o preço médio e o custo médio do produto
-        preco_medio_produto = df_produto['Price'].mean()
-        custo_medio_produto = df_produto['Cost'].mean()
+    # Aplicar modelo de regressão para cada produto
+    for i, row in tabela_otimizada.iterrows():
+        data_produto = df_uf[df_uf["Aparelho"] == row["Aparelho"]]
 
-       # st.subheader(f"📋 Dados de {produto_selecionado}")
-        st.write(f"💰 **Preço Médio:** R$ {preco_medio_produto:.2f}")
-        st.write(f"📉 **Custo Médio:** R$ {custo_medio_produto:.2f}")
+        if len(data_produto) > 2:  # Pelo menos 2 pontos para regressão
+            X = data_produto["Price"].values.reshape(-1, 1)
+            y = data_produto["SaleQt"].values.reshape(-1, 1)
 
-        # Calcular o preço médio, custo médio e quantidade vendida por UF
-        preco_medio_por_uf = df_produto.groupby('UF')['Price'].mean().reset_index()
-        custo_medio_por_uf = df_produto.groupby('UF')['Cost'].mean().reset_index()
-        qtd_por_uf = df_produto.groupby('UF')['SaleQt'].sum().reset_index()
+            model = LinearRegression()
+            model.fit(X, y)
 
-        # Combinar os DataFrames de preço, custo e quantidade por UF
-        tabela_completa = (
-            preco_medio_por_uf
-            .merge(custo_medio_por_uf, on='UF', suffixes=('_Preço', '_Custo'))
-            .merge(qtd_por_uf, on='UF')
-        )
+            intercept = model.intercept_[0]
+            slope = model.coef_[0][0]
 
-        # Renomear coluna SaleQt para Qty
-        tabela_completa = tabela_completa.rename(columns={'SaleQt': 'Qty'})
+            # Elasticidade e preço ótimo
+            mean_price = data_produto["Price"].mean()
+            mean_quantity = data_produto["SaleQt"].mean()
+            elasticity = (slope * mean_price) / mean_quantity
+            price_optimal = -intercept / (2 * slope)
 
-        # Calcular a margem de estoque SMS%
-        tabela_completa['SMS%'] = 1 - (tabela_completa['Cost'] / tabela_completa['Price'])
+            # Estimar nova quantidade e receita com o preço ótimo
+            new_qty = intercept + slope * price_optimal
+            new_revenue = new_qty * price_optimal
 
-        # Formatar a tabela para exibir valores com duas casas decimais
-        tabela_completa = tabela_completa.round(2)
+            # Adicionar ao DataFrame
+            tabela_otimizada.at[i, "Price Optimal"] = round(price_optimal, 2)
+            tabela_otimizada.at[i, "New Qty"] = round(new_qty, 0)
+            tabela_otimizada.at[i, "New Revenue"] = round(new_revenue, 2)
+            tabela_otimizada.at[i, "Elasticity"] = round(elasticity, 2)
 
-        # Exibir a tabela completa
-        st.write(f"📊 Dados por UF para **{produto_selecionado}**")
-        st.dataframe(tabela_completa, height=400)
+    # Exibir a tabela com os preços ótimos
+    st.dataframe(tabela_otimizada, height=400)
 
 else:
     st.warning("🚨 Por favor, carregue o arquivo 'entrada.csv' para continuar.")
