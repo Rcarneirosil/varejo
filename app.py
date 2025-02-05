@@ -37,9 +37,9 @@ try:
 
     with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos")
-        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=True)  # Inverter para gráfico horizontal
+        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)  # Agora ordenado corretamente
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(y=top_produtos.tail(10).index, x=top_produtos.tail(10).values, palette="coolwarm", ax=ax)  # Gráfico de barras horizontais
+        sns.barplot(y=top_produtos.head(10).index, x=top_produtos.head(10).values, palette="coolwarm", ax=ax)  # Gráfico de barras horizontais
         ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
         ax.set_title("Top 10 Produtos Mais Vendidos", fontsize=14, color="white")
         ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
@@ -81,8 +81,8 @@ try:
         st.write(f"📊 Dados por UF para **{produto_selecionado}**")
         st.dataframe(tabela_completa, height=400)
 
-    # Criar colunas para a análise por UF
-    col3, col4 = st.columns([1.5, 1.5])  # Ajuste para melhor distribuição do layout
+    # Criar a terceira coluna para exibir a análise de preços ótimos + margem
+    col3, _ = st.columns([2, 1])  # Ajuste para melhor distribuição do layout
 
     with col3:
         st.subheader("🔍 Análise Completa por UF")
@@ -98,7 +98,10 @@ try:
             Qty=("SaleQt", "sum")
         ).reset_index()
 
-        # Adicionar colunas vazias para cálculos
+        # Calcular a margem de lucro
+        tabela_otimizada["Margem"] = (tabela_otimizada["Price"] - tabela_otimizada["Cost"]) / tabela_otimizada["Price"]
+
+        # Adicionar colunas vazias para cálculos de otimização
         tabela_otimizada["Price Optimal"] = np.nan
         tabela_otimizada["New Qty"] = np.nan
         tabela_otimizada["New Revenue"] = np.nan
@@ -134,34 +137,12 @@ try:
                 tabela_otimizada.at[i, "New Revenue"] = round(new_revenue, 2)
                 tabela_otimizada.at[i, "Elasticity"] = round(elasticity, 2)
 
+        # Arredondar valores finais
+        tabela_otimizada = tabela_otimizada.round(2)
+
         # Exibir a tabela na col3
-        st.write(f"📊 Análise de Precificação Ótima para Produtos na UF **{uf_selecionada}**")
+        st.write(f"📊 Análise de Precificação Ótima e Margem para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
-
-    with col4:
-        st.subheader("📈 Análise de Margem e Mix na UF")
-        df_margem = df_uf.copy()
-        df_margem["Margem"] = (df_margem["Price"] - df_margem["Cost"]) / df_margem["Price"]
-        
-        # Agrupar dados por aparelho e calcular margem média
-        margem_mix = df_margem.groupby("Aparelho").agg(
-            Margem=("Margem", "mean"),
-            Qtde=("SaleQt", "sum")
-        ).reset_index()
-
-        # Criar gráfico de margem por aparelho
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.barplot(y=margem_mix["Aparelho"], x=margem_mix["Margem"], palette="viridis", ax=ax)
-        ax.set_title(f"Margem Média por Produto - {uf_selecionada}", fontsize=14, color="white")
-        ax.set_xlabel("Margem (%)", fontsize=12, color="white")
-        ax.set_ylabel("Produto", fontsize=12, color="white")
-        plt.tight_layout()
-        st.pyplot(fig)
-
-        # Exibir tabela de mix e margem
-        margem_mix = margem_mix.round(2)
-        st.write(f"📊 Margem e Mix de Produtos na UF **{uf_selecionada}**")
-        st.dataframe(margem_mix, height=400)
 
 except Exception as e:
     st.error(f"❌ Erro ao carregar os dados: {e}")
