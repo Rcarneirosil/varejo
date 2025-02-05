@@ -21,7 +21,7 @@ plt.rcParams["grid.color"] = "#444444"
 plt.rcParams["savefig.facecolor"] = "#0E1117"
 
 # Título do aplicativo
-st.title("📊 Análise de Vendas de Produtos")
+st.title("📊 Análise de Vendas")
 
 # URL do arquivo CSV no GitHub (corrigida para o formato correto)
 csv_url = "https://raw.githubusercontent.com/Rcarneirosil/varejo/main/entrada.csv"
@@ -99,10 +99,10 @@ try:
         ).reset_index()
 
         # Adicionar colunas vazias para cálculos
-        tabela_otimizada["Price Optimal"] = np.nan
-        tabela_otimizada["New Qty"] = np.nan
-        tabela_otimizada["New Revenue"] = np.nan
-        tabela_otimizada["Elasticity"] = np.nan
+        tabela_otimizada["Preço Ótimo"] = np.nan
+        tabela_otimizada["Nova Qtd"] = np.nan
+        tabela_otimizada["Nova Receita"] = np.nan
+        tabela_otimizada["Elasticidade"] = np.nan
 
         # Aplicar modelo de regressão para cada produto **usando df_uf, sem agrupamento**
         for i, row in tabela_otimizada.iterrows():
