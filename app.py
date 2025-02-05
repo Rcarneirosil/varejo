@@ -37,22 +37,12 @@ try:
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
-
-        top_produtos = entrada.groupby(["Aparelho", "UF"])["SaleQt"].sum().reset_index()
-
+        st.subheader("📊 Gráfico de Produtos Mais Vendidos")
+        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(
-            data=top_produtos,
-            y="Aparelho",
-            x="SaleQt",
-            hue="UF",
-            palette="coolwarm",
-            ax=ax
-        )
-
+        sns.barplot(y=top_produtos.head(10).index, x=top_produtos.head(10).values, palette="coolwarm", ax=ax)
         ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
-        ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
+        ax.set_title("Top 10 Produtos Mais Vendidos", fontsize=14, color="white")
         ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
         ax.set_ylabel("Aparelho", fontsize=12, color="white")
         plt.tight_layout()
@@ -88,7 +78,7 @@ try:
         st.dataframe(tabela_completa, height=400)
 
     # Criar uma nova linha de colunas para incluir o gráfico de bolhas na col4
-    col3, col4 = st.columns([2, 1])
+    col3, col4 = st.columns([2, 1])  # Mantém proporção equilibrada
 
     with col3:
         st.subheader("🔍 Análise Completa por UF")
@@ -106,9 +96,41 @@ try:
 
         tabela_otimizada["Margem"] = 1 - (tabela_otimizada["Custo_Total"] / tabela_otimizada["Faturamento_Total"])
 
+        tabela_otimizada["Price Optimal"] = np.nan
+        tabela_otimizada["New Qty"] = np.nan
+        tabela_otimizada["New Revenue"] = np.nan
+        tabela_otimizada["Elasticity"] = np.nan
+
+        for i, row in tabela_otimizada.iterrows():
+            data_produto = df_uf[df_uf["Aparelho"] == row["Aparelho"]]
+
+            if len(data_produto) > 2:
+                X = data_produto["Price"].values.reshape(-1, 1)
+                y = data_produto["SaleQt"].values.reshape(-1, 1)
+
+                model = LinearRegression()
+                model.fit(X, y)
+
+                intercept = model.intercept_[0]
+                slope = model.coef_[0][0]
+
+                mean_price = data_produto["Price"].mean()
+                mean_quantity = data_produto["SaleQt"].mean()
+                elasticity = (slope * mean_price) / mean_quantity
+                price_optimal = -intercept / (2 * slope)
+
+                new_qty = intercept + slope * price_optimal
+                new_revenue = new_qty * price_optimal
+
+                tabela_otimizada.at[i, "Price Optimal"] = round(price_optimal, 2)
+                tabela_otimizada.at[i, "New Qty"] = round(new_qty, 0)
+                tabela_otimizada.at[i, "New Revenue"] = round(new_revenue, 2)
+                tabela_otimizada.at[i, "Elasticity"] = round(elasticity, 2)
+
         st.write(f"📊 Análise de Precificação Ótima, Margem e Faturamento para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
+    # Criar a tabela agregada com faturamento total e custo total por UF
     with col4:
         st.subheader("📈 Margem por UF")
 
@@ -122,7 +144,6 @@ try:
 
         def top_produtos_margem(uf):
             df_uf = entrada[entrada["UF"] == uf]
-
             top_prod = (
                 df_uf.groupby("Aparelho").agg(
                     Faturamento=("SaleAmt", "sum"),
@@ -130,11 +151,7 @@ try:
                 )
             )
             top_prod["Margem"] = 1 - (top_prod["Margem"] / df_uf.groupby("Aparelho")["SaleAmt"].sum())
-
-            ## **Novo Critério**: Multiplicamos margem x faturamento para pegar os mais relevantes
-            top_prod["Impacto_Margem"] = top_prod["Margem"] * top_prod["Faturamento"]
-
-            top_prod = top_prod.sort_values("Impacto_Margem", ascending=False).head(3)
+            top_prod = top_prod.sort_values("Faturamento", ascending=False).head(3)
 
             return "<br>".join([f"{prod}: {margem:.2%}" for prod, margem in zip(top_prod.index, top_prod["Margem"])])
 
@@ -148,7 +165,7 @@ try:
             text="UF",
             hover_data={"Produtos": True, "Margem_Total": ":.2%"},
             title="Faturamento x Volume de Vendas",
-            height=600
+            height=600  # 🔥 **Ajuste na altura do gráfico**
         )
 
         st.plotly_chart(fig, use_container_width=True)
