@@ -143,12 +143,12 @@ try:
         df_uf = entrada[entrada["UF"] == uf]
         top_prod = (
             df_uf.groupby("Aparelho").agg(
-                Qtde=("SaleQt", "sum"),
+                Faturamento=("SaleAmt", "sum"),
                 Margem=("SaleCostAmt", "sum")
             )
         )
         top_prod["Margem"] = 1 - (top_prod["Margem"] / df_uf.groupby("Aparelho")["SaleAmt"].sum())
-        top_prod = top_prod.sort_values("Qtde", ascending=False).head(3)
+        top_prod = top_prod.sort_values("Faturamento", ascending=False).head(3)
 
         return "<br>".join([f"{prod}: {margem:.2%}" for prod, margem in zip(top_prod.index, top_prod["Margem"])])
 
