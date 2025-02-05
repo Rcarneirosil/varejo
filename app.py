@@ -99,8 +99,8 @@ try:
             Qty=("SaleQt", "sum")
         ).reset_index()
 
-        # Calcular a margem de lucro
-        tabela_otimizada["Margem"] = (tabela_otimizada["Price"] - tabela_otimizada["Cost"]) / tabela_otimizada["Price"]
+        # Calcular a margem correta: SMS% = 1 - (Cost / Price)
+        tabela_otimizada["Margem"] = 1 - (tabela_otimizada["Cost"] / tabela_otimizada["Price"])
 
         # Adicionar colunas vazias para cálculos de otimização
         tabela_otimizada["Price Optimal"] = np.nan
@@ -108,11 +108,11 @@ try:
         tabela_otimizada["New Revenue"] = np.nan
         tabela_otimizada["Elasticity"] = np.nan
 
-        # Aplicar modelo de regressão para cada produto **usando df_uf, sem agrupamento**
+        # Aplicar modelo de regressão para cada produto
         for i, row in tabela_otimizada.iterrows():
             data_produto = df_uf[df_uf["Aparelho"] == row["Aparelho"]]
 
-            if len(data_produto) > 2:  # Pelo menos 2 pontos para regressão
+            if len(data_produto) > 2:
                 X = data_produto["Price"].values.reshape(-1, 1)
                 y = data_produto["SaleQt"].values.reshape(-1, 1)
 
@@ -132,24 +132,27 @@ try:
                 new_qty = intercept + slope * price_optimal
                 new_revenue = new_qty * price_optimal
 
-                # Adicionar ao DataFrame
                 tabela_otimizada.at[i, "Price Optimal"] = round(price_optimal, 2)
                 tabela_otimizada.at[i, "New Qty"] = round(new_qty, 0)
                 tabela_otimizada.at[i, "New Revenue"] = round(new_revenue, 2)
                 tabela_otimizada.at[i, "Elasticity"] = round(elasticity, 2)
 
-        # Exibir a tabela
         st.write(f"📊 Análise de Precificação Ótima e Margem para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
-        # Criar gráfico de bolhas (Faturamento x Volume, tamanho da bolha = Margem)
+        # Criar gráfico de bolhas com tooltip correto
         df_bolhas = entrada.groupby("UF").agg(
             Faturamento_Total=("SaleAmt", "sum"),
             Volume_Vendas=("SaleQt", "sum"),
             Margem_Total=("GrossProfitAmt", "sum")
         ).reset_index()
 
-        df_bolhas["Produtos"] = entrada.groupby("UF")["Aparelho"].apply(lambda x: ", ".join(x.unique()))
+        # Criar lista dos produtos que mais impactaram a margem (ordenados)
+        df_bolhas["Produtos"] = entrada.groupby("UF").apply(
+            lambda x: ", ".join(
+                x.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False).head(3).index
+            )
+        ).reset_index(drop=True)
 
         fig = px.scatter(
             df_bolhas,
