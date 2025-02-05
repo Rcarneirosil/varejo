@@ -37,32 +37,24 @@ try:
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.subheader("📊 Top 3 Produtos Mais Vendidos por UF")
+        st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
 
-        # Selecionar os 3 produtos mais vendidos
-        top_3_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().nlargest(3).index
+        top_produtos = entrada.groupby(["Aparelho", "UF"])["SaleQt"].sum().reset_index()
 
-        # Filtrar apenas esses produtos no dataset
-        df_top = entrada[entrada["Aparelho"].isin(top_3_produtos)]
-
-        # Criar gráfico empilhado de vendas por UF
         fig, ax = plt.subplots(figsize=(10, 6))
         sns.barplot(
-            data=df_top,
-            x="SaleQt",
+            data=top_produtos,
             y="Aparelho",
+            x="SaleQt",
             hue="UF",
             palette="coolwarm",
-            estimator=sum,
-            ci=None,
-            dodge=False,  # 🔥 Deixa as barras empilhadas
             ax=ax
         )
 
-        ax.set_title("Top 3 Produtos Mais Vendidos por UF", fontsize=14, color="white")
+        ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
+        ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
         ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
         ax.set_ylabel("Aparelho", fontsize=12, color="white")
-        plt.legend(title="UF", loc="upper right", fontsize=10)
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -130,6 +122,7 @@ try:
 
         def top_produtos_margem(uf):
             df_uf = entrada[entrada["UF"] == uf]
+
             top_prod = (
                 df_uf.groupby("Aparelho").agg(
                     Faturamento=("SaleAmt", "sum"),
@@ -138,8 +131,9 @@ try:
             )
             top_prod["Margem"] = 1 - (top_prod["Margem"] / df_uf.groupby("Aparelho")["SaleAmt"].sum())
 
-            ## **Critério Melhorado**: Ordenamos por impacto total (Margem * Faturamento)
+            ## **Novo Critério**: Multiplicamos margem x faturamento para pegar os mais relevantes
             top_prod["Impacto_Margem"] = top_prod["Margem"] * top_prod["Faturamento"]
+
             top_prod = top_prod.sort_values("Impacto_Margem", ascending=False).head(3)
 
             return "<br>".join([f"{prod}: {margem:.2%}" for prod, margem in zip(top_prod.index, top_prod["Margem"])])
