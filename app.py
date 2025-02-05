@@ -53,7 +53,7 @@ if uploaded_file is not None:
     # Criar colunas para dispor o gráfico ao lado da tabela do produto selecionado
     col3, col4 = st.columns([1.5, 1])  # Mais espaço para o gráfico
 
-    with col3:
+    with col2:
         # Selecionar o produto desejado
         produto_selecionado = st.selectbox(
             "Selecione um produto:",
@@ -66,21 +66,13 @@ if uploaded_file is not None:
         # Criar gráfico de vendas do produto por UF
         vendas_por_uf = df_produto.groupby("UF")["SaleQt"].sum().reset_index()
 
-        st.subheader(f"📊 Vendas do Produto '{produto_selecionado}' por Estado")
-        fig_prod, ax_prod = plt.subplots(figsize=(8, 5))
-        sns.barplot(x=vendas_por_uf["UF"], y=vendas_por_uf["SaleQt"], palette="coolwarm", ax=ax_prod)
-        ax_prod.set_title(f"Vendas por Estado - {produto_selecionado}", fontsize=14, color="white")
-        ax_prod.set_xlabel("Estado", fontsize=12, color="white")
-        ax_prod.set_ylabel("Quantidade Vendida", fontsize=12, color="white")
-        plt.tight_layout()
-        st.pyplot(fig_prod)
 
-    with col4:
+   # with col4:
         # Calcular o preço médio e o custo médio do produto
         preco_medio_produto = df_produto['Price'].mean()
         custo_medio_produto = df_produto['Cost'].mean()
 
-        st.subheader(f"📋 Dados de {produto_selecionado}")
+       # st.subheader(f"📋 Dados de {produto_selecionado}")
         st.write(f"💰 **Preço Médio:** R$ {preco_medio_produto:.2f}")
         st.write(f"📉 **Custo Médio:** R$ {custo_medio_produto:.2f}")
 
