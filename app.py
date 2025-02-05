@@ -28,7 +28,7 @@ if uploaded_file is not None:
     entrada = pd.read_csv(uploaded_file)
 
     #%% TOP SELLING PRODUCTS BASED ON TOTAL SALES QUANTITY
-    st.header("Top 10 Produtos Mais Vendidos")
+ #   st.header("Top 10 Produtos Mais Vendidos")
 
     # Somar a quantidade total vendida por produto
     top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)
@@ -55,6 +55,7 @@ if uploaded_file is not None:
 
     with col2:
         # Selecionar o produto desejado
+        st.subheader("📋 Tabela de Produtos por UF")
         produto_selecionado = st.selectbox(
             "Selecione um produto:",
             entrada["Aparelho"].unique()
