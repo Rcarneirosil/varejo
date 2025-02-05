@@ -39,14 +39,17 @@ try:
     with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
 
-        # Selecionar os 10 produtos mais vendidos
-        top_10_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().nlargest(10).index
+        # Calcular o total de vendas por produto (independente da UF) e selecionar os 10 mais vendidos
+        total_vendas_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().reset_index()
+        top_10_produtos = total_vendas_produtos.nlargest(10, "SaleQt")["Aparelho"]
 
-        # Filtrar apenas esses produtos no dataset
+        # Filtrar apenas esses produtos no dataset original
         df_top = entrada[entrada["Aparelho"].isin(top_10_produtos)]
 
-        # Ordenar pela quantidade total vendida dos produtos
+        # Agrupar corretamente por produto e UF para criar o gráfico empilhado
         df_top = df_top.groupby(["Aparelho", "UF"])["SaleQt"].sum().reset_index()
+
+        # Ordenar os produtos pelo total de vendas no dataset filtrado
         df_top["Aparelho"] = pd.Categorical(df_top["Aparelho"], categories=top_10_produtos, ordered=True)
 
         # Criar gráfico empilhado de vendas por UF
