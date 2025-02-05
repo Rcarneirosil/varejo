@@ -24,7 +24,7 @@ plt.rcParams["savefig.facecolor"] = "#0E1117"
 # Título do aplicativo
 st.title("📊 Análise de Vendas")
 
-# URL do arquivo CSV no GitHub (corrigida para o formato correto)
+# URL do arquivo CSV no GitHub
 csv_url = "https://raw.githubusercontent.com/Rcarneirosil/varejo/main/entrada.csv"
 
 # Tentar carregar o arquivo CSV diretamente do GitHub
@@ -38,9 +38,9 @@ try:
 
     with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos")
-        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)  # Agora ordenado corretamente
+        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(y=top_produtos.head(10).index, x=top_produtos.head(10).values, palette="coolwarm", ax=ax)  # Gráfico de barras horizontais
+        sns.barplot(y=top_produtos.head(10).index, x=top_produtos.head(10).values, palette="coolwarm", ax=ax)
         ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
         ax.set_title("Top 10 Produtos Mais Vendidos", fontsize=14, color="white")
         ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
@@ -142,22 +142,23 @@ try:
         st.write(f"📊 Análise de Precificação Ótima e Margem para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
-        # Criar gráfico de bolhas da margem por UF
-        df_margem = entrada.groupby("UF").agg(
-            Margem_Total=("GrossProfitAmt", "sum"),
-            Volume=("SaleQt", "sum")
+        # Criar gráfico de bolhas (Faturamento x Volume, tamanho da bolha = Margem)
+        df_bolhas = entrada.groupby("UF").agg(
+            Faturamento_Total=("SaleAmt", "sum"),
+            Volume_Vendas=("SaleQt", "sum"),
+            Margem_Total=("GrossProfitAmt", "sum")
         ).reset_index()
 
-        df_margem["Produtos"] = entrada.groupby("UF")["Aparelho"].apply(lambda x: ", ".join(x.unique()))
+        df_bolhas["Produtos"] = entrada.groupby("UF")["Aparelho"].apply(lambda x: ", ".join(x.unique()))
 
         fig = px.scatter(
-            df_margem,
-            x="UF",
-            y="Margem_Total",
-            size="Volume",
+            df_bolhas,
+            x="Volume_Vendas",
+            y="Faturamento_Total",
+            size="Margem_Total",
             text="UF",
-            hover_data={"Produtos": True, "Margem_Total": ":.2f"},
-            title="Margem Total por UF (Gráfico de Bolhas)"
+            hover_data={"Produtos": True, "Faturamento_Total": ":.2f"},
+            title="Faturamento x Volume de Vendas (Tamanho = Margem Total)"
         )
 
         st.plotly_chart(fig, use_container_width=True)
