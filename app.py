@@ -140,35 +140,40 @@ try:
         st.write(f"📊 Análise de Precificação Ótima e Margem para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
-   # Criar a tabela agregada com faturamento total e custo total por UF
-df_bolhas = entrada.groupby("UF").agg(
-    Faturamento_Total=("SaleAmt", "sum"),
-    Volume_Vendas=("SaleQt", "sum"),
-    Custo_Total=("SaleCostAmt", "sum")
-).reset_index()
+try:
+    # Criar a tabela agregada com faturamento total e custo total por UF
+    df_bolhas = entrada.groupby("UF").agg(
+        Faturamento_Total=("SaleAmt", "sum"),
+        Volume_Vendas=("SaleQt", "sum"),
+        Custo_Total=("SaleCostAmt", "sum")
+    ).reset_index()
 
-# Calcular a margem corretamente
-df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
+    # Calcular a margem corretamente
+    df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
 
-# Criar lista dos produtos que mais impactaram a margem (ordenados por vendas)
-df_bolhas["Produtos"] = entrada.groupby("UF").apply(
-    lambda x: ", ".join(
-        x.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False).head(3).index
+    # Criar lista dos produtos que mais impactaram a margem (ordenados por vendas)
+    df_bolhas["Produtos"] = entrada.groupby("UF").apply(
+        lambda x: ", ".join(
+            x.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False).head(3).index
+        )
+    ).reset_index(drop=True)
+
+    # Criar gráfico de bolhas
+    fig = px.scatter(
+        df_bolhas,
+        x="Volume_Vendas",
+        y="Faturamento_Total",
+        size="Margem_Total",
+        text="UF",
+        hover_data={"Produtos": True, "Margem_Total": ":.2%"},
+        title="Faturamento x Volume de Vendas (Tamanho = Margem Total)"
     )
-).reset_index(drop=True)
 
-# Criar gráfico de bolhas
-fig = px.scatter(
-    df_bolhas,
-    x="Volume_Vendas",
-    y="Faturamento_Total",
-    size="Margem_Total",
-    text="UF",
-    hover_data={"Produtos": True, "Margem_Total": ":.2%"},
-    title="Faturamento x Volume de Vendas (Tamanho = Margem Total)"
-)
+    st.plotly_chart(fig, use_container_width=True)
 
-st.plotly_chart(fig, use_container_width=True)
+except Exception as e:
+    st.error(f"❌ Erro ao carregar os dados: {e}")
+
 
 
 except Exception as e:
