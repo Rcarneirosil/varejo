@@ -29,7 +29,7 @@ uploaded_file = st.file_uploader("Carregue o arquivo 'entrada.csv'", type="csv")
 if uploaded_file is not None:
     entrada = pd.read_csv(uploaded_file)
 
-    #%% Criar colunas para dividir a visualização
+    # Criar colunas para organizar o layout
     col1, col2 = st.columns([2, 1])  # Mantendo layout original
 
     with col1:
@@ -78,7 +78,7 @@ if uploaded_file is not None:
         st.write(f"📊 Dados por UF para **{produto_selecionado}**")
         st.dataframe(tabela_completa, height=400)
 
-    #%% Adicionar a col3 com a análise para TODOS os produtos na UF escolhida
+    # Criar a terceira coluna para exibir a análise de preços ótimos
     col3, _ = st.columns([2, 1])  # Criando nova seção para a tabela otimizada
 
     with col3:
@@ -88,7 +88,7 @@ if uploaded_file is not None:
         # Filtrar dados da UF selecionada
         df_uf = entrada[entrada["UF"] == uf_selecionada]
 
-        # Criar tabela base
+        # Criar tabela base (Agrupamento correto)
         tabela_otimizada = df_uf.groupby("Aparelho").agg(
             Price=("Price", "mean"),
             Cost=("Cost", "mean"),
@@ -101,7 +101,7 @@ if uploaded_file is not None:
         tabela_otimizada["New Revenue"] = np.nan
         tabela_otimizada["Elasticity"] = np.nan
 
-        # Aplicar modelo de regressão para cada produto
+        # Aplicar modelo de regressão para cada produto **usando df_uf, sem agrupamento**
         for i, row in tabela_otimizada.iterrows():
             data_produto = df_uf[df_uf["Aparelho"] == row["Aparelho"]]
 
