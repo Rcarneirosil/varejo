@@ -34,7 +34,7 @@ try:
     st.success("✅ Dados carregados com sucesso!")
 
     # Criar colunas para organizar o layout
-    col1, col2 = st.columns([2, 1])  # Mantendo layout original
+    col1, col2 = st.columns([2, 1])
 
     with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos")
@@ -57,25 +57,20 @@ try:
 
         df_produto = entrada[entrada['Aparelho'] == produto_selecionado]
 
-        vendas_por_uf = df_produto.groupby("UF")["SaleQt"].sum().reset_index()
-
         preco_medio_produto = df_produto['Price'].mean()
         custo_medio_produto = df_produto['Cost'].mean()
 
         st.write(f"💰 **Preço Médio:** R$ {preco_medio_produto:.2f}")
         st.write(f"📉 **Custo Médio:** R$ {custo_medio_produto:.2f}")
 
-        preco_medio_por_uf = df_produto.groupby('UF')['Price'].mean().reset_index()
-        custo_medio_por_uf = df_produto.groupby('UF')['Cost'].mean().reset_index()
-        qtd_por_uf = df_produto.groupby('UF')['SaleQt'].sum().reset_index()
-
         tabela_completa = (
-            preco_medio_por_uf
-            .merge(custo_medio_por_uf, on='UF', suffixes=('_Preço', '_Custo'))
-            .merge(qtd_por_uf, on='UF')
-        )
+            df_produto.groupby('UF').agg(
+                Price=("Price", "mean"),
+                Cost=("Cost", "mean"),
+                Qty=("SaleQt", "sum")
+            )
+        ).reset_index()
 
-        tabela_completa = tabela_completa.rename(columns={'SaleQt': 'Qty'})
         tabela_completa['SMS%'] = 1 - (tabela_completa['Cost'] / tabela_completa['Price'])
         tabela_completa = tabela_completa.round(2)
 
@@ -83,32 +78,26 @@ try:
         st.dataframe(tabela_completa, height=400)
 
     # Criar a terceira coluna para exibir a análise de preços ótimos + margem
-    col3, _ = st.columns([2, 1])  # Ajuste para melhor distribuição do layout
+    col3, _ = st.columns([2, 1])
 
     with col3:
         st.subheader("🔍 Análise Completa por UF")
         uf_selecionada = st.selectbox("Escolha uma UF para análise:", sorted(entrada["UF"].unique()))
 
-        # Filtrar dados da UF selecionada
         df_uf = entrada[entrada["UF"] == uf_selecionada]
 
-        # Criar tabela base (Agrupamento correto)
         tabela_otimizada = df_uf.groupby("Aparelho").agg(
             Price=("Price", "mean"),
             Cost=("Cost", "mean"),
             Qty=("SaleQt", "sum")
         ).reset_index()
 
-        # Calcular a margem correta: SMS% = 1 - (Cost / Price)
         tabela_otimizada["Margem"] = 1 - (tabela_otimizada["Cost"] / tabela_otimizada["Price"])
-
-        # Adicionar colunas vazias para cálculos de otimização
         tabela_otimizada["Price Optimal"] = np.nan
         tabela_otimizada["New Qty"] = np.nan
         tabela_otimizada["New Revenue"] = np.nan
         tabela_otimizada["Elasticity"] = np.nan
 
-        # Aplicar modelo de regressão para cada produto
         for i, row in tabela_otimizada.iterrows():
             data_produto = df_uf[df_uf["Aparelho"] == row["Aparelho"]]
 
@@ -122,13 +111,11 @@ try:
                 intercept = model.intercept_[0]
                 slope = model.coef_[0][0]
 
-                # Elasticidade e preço ótimo
                 mean_price = data_produto["Price"].mean()
                 mean_quantity = data_produto["SaleQt"].mean()
                 elasticity = (slope * mean_price) / mean_quantity
                 price_optimal = -intercept / (2 * slope)
 
-                # Estimar nova quantidade e receita com o preço ótimo
                 new_qty = intercept + slope * price_optimal
                 new_revenue = new_qty * price_optimal
 
@@ -140,7 +127,6 @@ try:
         st.write(f"📊 Análise de Precificação Ótima e Margem para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
-try:
     # Criar a tabela agregada com faturamento total e custo total por UF
     df_bolhas = entrada.groupby("UF").agg(
         Faturamento_Total=("SaleAmt", "sum"),
@@ -148,17 +134,14 @@ try:
         Custo_Total=("SaleCostAmt", "sum")
     ).reset_index()
 
-    # Calcular a margem corretamente
     df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
 
-    # Criar lista dos produtos que mais impactaram a margem (ordenados por vendas)
     df_bolhas["Produtos"] = entrada.groupby("UF").apply(
         lambda x: ", ".join(
             x.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False).head(3).index
         )
     ).reset_index(drop=True)
 
-    # Criar gráfico de bolhas
     fig = px.scatter(
         df_bolhas,
         x="Volume_Vendas",
@@ -170,11 +153,6 @@ try:
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
-except Exception as e:
-    st.error(f"❌ Erro ao carregar os dados: {e}")
-
-
 
 except Exception as e:
     st.error(f"❌ Erro ao carregar os dados: {e}")
