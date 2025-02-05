@@ -37,13 +37,13 @@ try:
 
     with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos")
-        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)
+        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=True)  # Inverter para gráfico horizontal
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(x=top_produtos.head(10).index, y=top_produtos.head(10).values, palette="coolwarm", ax=ax)
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=10)
+        sns.barplot(y=top_produtos.tail(10).index, x=top_produtos.tail(10).values, palette="coolwarm", ax=ax)  # Gráfico de barras horizontais
+        ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
         ax.set_title("Top 10 Produtos Mais Vendidos", fontsize=14, color="white")
-        ax.set_xlabel("Aparelho", fontsize=12, color="white")
-        ax.set_ylabel("Quantidade Vendida", fontsize=12, color="white")
+        ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
+        ax.set_ylabel("Aparelho", fontsize=12, color="white")
         plt.tight_layout()
         st.pyplot(fig)
 
@@ -81,8 +81,8 @@ try:
         st.write(f"📊 Dados por UF para **{produto_selecionado}**")
         st.dataframe(tabela_completa, height=400)
 
-    # Criar a terceira coluna para exibir a análise de preços ótimos
-    col3, _ = st.columns([2, 1])  # Criando nova seção para a tabela otimizada
+    # Criar colunas para a análise por UF
+    col3, col4 = st.columns([1.5, 1.5])  # Ajuste para melhor distribuição do layout
 
     with col3:
         st.subheader("🔍 Análise Completa por UF")
@@ -137,6 +137,31 @@ try:
         # Exibir a tabela na col3
         st.write(f"📊 Análise de Precificação Ótima para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
+
+    with col4:
+        st.subheader("📈 Análise de Margem e Mix na UF")
+        df_margem = df_uf.copy()
+        df_margem["Margem"] = (df_margem["Price"] - df_margem["Cost"]) / df_margem["Price"]
+        
+        # Agrupar dados por aparelho e calcular margem média
+        margem_mix = df_margem.groupby("Aparelho").agg(
+            Margem=("Margem", "mean"),
+            Qtde=("SaleQt", "sum")
+        ).reset_index()
+
+        # Criar gráfico de margem por aparelho
+        fig, ax = plt.subplots(figsize=(8, 5))
+        sns.barplot(y=margem_mix["Aparelho"], x=margem_mix["Margem"], palette="viridis", ax=ax)
+        ax.set_title(f"Margem Média por Produto - {uf_selecionada}", fontsize=14, color="white")
+        ax.set_xlabel("Margem (%)", fontsize=12, color="white")
+        ax.set_ylabel("Produto", fontsize=12, color="white")
+        plt.tight_layout()
+        st.pyplot(fig)
+
+        # Exibir tabela de mix e margem
+        margem_mix = margem_mix.round(2)
+        st.write(f"📊 Margem e Mix de Produtos na UF **{uf_selecionada}**")
+        st.dataframe(margem_mix, height=400)
 
 except Exception as e:
     st.error(f"❌ Erro ao carregar os dados: {e}")
