@@ -37,14 +37,32 @@ try:
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.subheader("📊 Gráfico de Produtos Mais Vendidos")
-        top_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().sort_values(ascending=False)
+        st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
+
+        # Selecionar os 10 produtos mais vendidos
+        top_10_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().nlargest(10).index
+
+        # Filtrar apenas esses produtos no dataset
+        df_top = entrada[entrada["Aparelho"].isin(top_10_produtos)]
+
+        # Criar gráfico empilhado de vendas por UF
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.barplot(y=top_produtos.head(10).index, x=top_produtos.head(10).values, palette="coolwarm", ax=ax)
-        ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
-        ax.set_title("Top 10 Produtos Mais Vendidos", fontsize=14, color="white")
+        sns.barplot(
+            data=df_top,
+            x="SaleQt",
+            y="Aparelho",
+            hue="UF",  # 🔥 Agora sim funciona, pois temos UF no dataset
+            palette="coolwarm",
+            estimator=sum,
+            ci=None,
+            dodge=False,  # 🔥 Faz as barras ficarem empilhadas
+            ax=ax
+        )
+
+        ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
         ax.set_xlabel("Quantidade Vendida", fontsize=12, color="white")
         ax.set_ylabel("Aparelho", fontsize=12, color="white")
+        plt.legend(title="UF", loc="upper right", fontsize=10)
         plt.tight_layout()
         st.pyplot(fig)
 
