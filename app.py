@@ -36,7 +36,7 @@ try:
     # Criar colunas para organizar o layout
     col1, col2 = st.columns([2, 1])
 
-        with col1:
+    with col1:
         st.subheader("📊 Gráfico de Produtos Mais Vendidos por UF")
 
         # Calcular o total de vendas por produto (independente da UF) e selecionar os 10 mais vendidos
