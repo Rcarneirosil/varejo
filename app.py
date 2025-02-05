@@ -56,7 +56,8 @@ try:
             estimator=sum,
             ci=None,
             dodge=False,  # 🔥 Faz as barras ficarem empilhadas
-            ax=ax
+            ax=ax,
+            ascending=False
         )
 
         ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
