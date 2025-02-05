@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 from sklearn.linear_model import LinearRegression
 
 # Expandir a tela para largura total
@@ -137,12 +138,29 @@ try:
                 tabela_otimizada.at[i, "New Revenue"] = round(new_revenue, 2)
                 tabela_otimizada.at[i, "Elasticity"] = round(elasticity, 2)
 
-        # Arredondar valores finais
-        tabela_otimizada = tabela_otimizada.round(2)
-
-        # Exibir a tabela na col3
+        # Exibir a tabela
         st.write(f"📊 Análise de Precificação Ótima e Margem para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
+
+        # Criar gráfico de bolhas da margem por UF
+        df_margem = entrada.groupby("UF").agg(
+            Margem_Total=("GrossProfitAmt", "sum"),
+            Volume=("SaleQt", "sum")
+        ).reset_index()
+
+        df_margem["Produtos"] = entrada.groupby("UF")["Aparelho"].apply(lambda x: ", ".join(x.unique()))
+
+        fig = px.scatter(
+            df_margem,
+            x="UF",
+            y="Margem_Total",
+            size="Volume",
+            text="UF",
+            hover_data={"Produtos": True, "Margem_Total": ":.2f"},
+            title="Margem Total por UF (Gráfico de Bolhas)"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
 except Exception as e:
     st.error(f"❌ Erro ao carregar os dados: {e}")
