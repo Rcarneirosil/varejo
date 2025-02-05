@@ -45,6 +45,10 @@ try:
         # Filtrar apenas esses produtos no dataset
         df_top = entrada[entrada["Aparelho"].isin(top_10_produtos)]
 
+        # Ordenar pela quantidade total vendida dos produtos
+        df_top = df_top.groupby(["Aparelho", "UF"])["SaleQt"].sum().reset_index()
+        df_top["Aparelho"] = pd.Categorical(df_top["Aparelho"], categories=top_10_produtos, ordered=True)
+
         # Criar gráfico empilhado de vendas por UF
         fig, ax = plt.subplots(figsize=(10, 6))
         sns.barplot(
@@ -57,7 +61,6 @@ try:
             ci=None,
             dodge=False,  # 🔥 Faz as barras ficarem empilhadas
             ax=ax,
-            ascending=False
         )
 
         ax.set_title("Top 10 Produtos Mais Vendidos por UF", fontsize=14, color="white")
