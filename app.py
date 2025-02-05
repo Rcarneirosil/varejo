@@ -86,19 +86,16 @@ try:
 
         df_uf = entrada[entrada["UF"] == uf_selecionada]
 
-        # Criar tabela base (Agrupamento correto com margem e faturamento total calculados da tabela original)
         tabela_otimizada = df_uf.groupby("Aparelho").agg(
             Price=("Price", "mean"),
             Cost=("Cost", "mean"),
             Qty=("SaleQt", "sum"),
-            Faturamento_Total=("SaleAmt", "sum"),  # Faturamento total por aparelho
-            Custo_Total=("SaleCostAmt", "sum")  # Custo total para margem correta
+            Faturamento_Total=("SaleAmt", "sum"),
+            Custo_Total=("SaleCostAmt", "sum")
         ).reset_index()
 
-        # Calcular a margem correta com base na tabela `entrada`
         tabela_otimizada["Margem"] = 1 - (tabela_otimizada["Custo_Total"] / tabela_otimizada["Faturamento_Total"])
 
-        # Adicionar colunas vazias para cálculos de otimização
         tabela_otimizada["Price Optimal"] = np.nan
         tabela_otimizada["New Qty"] = np.nan
         tabela_otimizada["New Revenue"] = np.nan
@@ -132,6 +129,42 @@ try:
 
         st.write(f"📊 Análise de Precificação Ótima, Margem e Faturamento para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
+
+    # Criar a tabela agregada com faturamento total e custo total por UF
+    df_bolhas = entrada.groupby("UF").agg(
+        Faturamento_Total=("SaleAmt", "sum"),
+        Volume_Vendas=("SaleQt", "sum"),
+        Custo_Total=("SaleCostAmt", "sum")
+    ).reset_index()
+
+    df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
+
+    def top_produtos_margem(uf):
+        df_uf = entrada[entrada["UF"] == uf]
+        top_prod = (
+            df_uf.groupby("Aparelho").agg(
+                Qtde=("SaleQt", "sum"),
+                Margem=("SaleCostAmt", "sum")
+            )
+        )
+        top_prod["Margem"] = 1 - (top_prod["Margem"] / df_uf.groupby("Aparelho")["SaleAmt"].sum())
+        top_prod = top_prod.sort_values("Qtde", ascending=False).head(3)
+
+        return "<br>".join([f"{prod}: {margem:.2%}" for prod, margem in zip(top_prod.index, top_prod["Margem"])])
+
+    df_bolhas["Produtos"] = df_bolhas["UF"].apply(top_produtos_margem)
+
+    fig = px.scatter(
+        df_bolhas,
+        x="Volume_Vendas",
+        y="Faturamento_Total",
+        size="Margem_Total",
+        text="UF",
+        hover_data={"Produtos": True, "Margem_Total": ":.2%"},
+        title="Faturamento x Volume de Vendas (Tamanho = Margem Total)"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 except Exception as e:
     st.error(f"❌ Erro ao carregar os dados: {e}")
