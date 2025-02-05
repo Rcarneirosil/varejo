@@ -23,11 +23,12 @@ plt.rcParams["savefig.facecolor"] = "#0E1117"
 # Título do aplicativo
 st.title("📊 Análise de Vendas de Produtos")
 
-# Carregar o arquivo CSV
-uploaded_file = st.file_uploader("Carregue o arquivo 'entrada.csv'", type="csv")
+# URL do arquivo CSV no GitHub (SUBSTITUA COM O LINK CORRETO)
+csv_url = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/entrada.csv"
 
-if uploaded_file is not None:
-    entrada = pd.read_csv(uploaded_file)
+# Tentar carregar o arquivo CSV diretamente do GitHub
+try:
+    entrada = pd.read_csv(csv_url)
 
     # Criar colunas para organizar o layout
     col1, col2 = st.columns([2, 1])  # Mantendo layout original
@@ -135,5 +136,5 @@ if uploaded_file is not None:
         st.write(f"📊 Análise de Precificação Ótima para Produtos na UF **{uf_selecionada}**")
         st.dataframe(tabela_otimizada, height=400)
 
-else:
-    st.warning("🚨 Por favor, carregue o arquivo 'entrada.csv' para continuar.")
+except Exception as e:
+    st.error(f"❌ Erro ao carregar os dados: {e}")
