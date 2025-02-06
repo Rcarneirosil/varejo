@@ -155,10 +155,10 @@ try:
     with col4:
         st.subheader("📈 Margem por UF")
 
-            df_bolhas = entrada.groupby("UF").agg(
-            Faturamento_Total=("SaleAmt", "sum"),
-            Volume_Vendas=("SaleQt", "sum"),
-            Custo_Total=("SaleCostAmt", "sum")
+        df_bolhas = entrada.groupby("UF").agg(
+        Faturamento_Total=("SaleAmt", "sum"),
+        Volume_Vendas=("SaleQt", "sum"),
+        Custo_Total=("SaleCostAmt", "sum")
         ).reset_index()
 
         df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
