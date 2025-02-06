@@ -156,7 +156,7 @@ try:
         st.subheader("📈 Margem por UF")
 
             df_bolhas = entrada.groupby("UF").agg(
-             Faturamento_Total=("SaleAmt", "sum"),
+            Faturamento_Total=("SaleAmt", "sum"),
             Volume_Vendas=("SaleQt", "sum"),
             Custo_Total=("SaleCostAmt", "sum")
         ).reset_index()
