@@ -155,24 +155,30 @@ try:
     with col4:
         st.subheader("📈 Margem por UF")
 
-        df_bolhas = entrada.groupby("UF").agg(
-        Faturamento_Total=("SaleAmt", "sum"),
-        Volume_Vendas=("SaleQt", "sum"),
-        Custo_Total=("SaleCostAmt", "sum")
+        df_radar = entrada.groupby("UF").agg(
+            Faturamento_Total=("SaleAmt", "sum"),
+            Custo_Total=("SaleCostAmt", "sum")
         ).reset_index()
 
-        df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
+        df_radar["Margem_Total"] = 1 - (df_radar["Custo_Total"] / df_radar["Faturamento_Total"])
 
-        fig = px.scatter(
-            df_bolhas,
-            x="Margem_Total",
-            y="Faturamento_Total",
-            size="Volume_Vendas",
-            text="UF",
-            hover_data={"Margem_Total": ":.2%"},
-            title="Faturamento x Volume de Vendas",
-            height=600
+        # Criando o gráfico de radar
+        fig = go.Figure()
+        fig.add_trace(go.Scatterpolar(
+            r=df_radar["Margem_Total"],
+            theta=df_radar["UF"],
+            fill='toself',
+            name='Margem por UF'
+        ))
+
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 1])
+            ),
+            title="Margem por UF"
         )
+
+        st.plotly_chart(fig)
 
         st.plotly_chart(fig, use_container_width=True)
 except Exception as e:
