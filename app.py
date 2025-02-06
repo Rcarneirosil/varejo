@@ -165,9 +165,9 @@ try:
 
         fig = px.scatter(
             df_bolhas,
-            x="Margem_Total",
+            x="Volume_Vendas",
             y="Faturamento_Total",
-            size="Volume_Vendas",
+            size="Margem_Total",
             text="UF",
             hover_data={"Margem_Total": ":.2%"},
             title="Faturamento x Volume de Vendas",
