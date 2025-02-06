@@ -37,7 +37,7 @@ try:
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.subheader("📊 Top 10 Produtos Mais Vendidos por UF (Ordenado)")
+        st.subheader("📊 Top 10 Produtos Mais Vendidos")
 
         # Selecionar os 10 produtos mais vendidos
         total_vendas_produtos = entrada.groupby("Aparelho")["SaleQt"].sum().reset_index()
@@ -108,7 +108,7 @@ try:
     col3, col4 = st.columns([2, 1])
 
     with col3:
-        st.subheader("🔍 Análise de Precificação Ótima por UF")
+        st.subheader("🔍 Análise de Precificação Geral")
         uf_selecionada = st.selectbox("Escolha uma UF para análise:", sorted(entrada["UF"].unique()))
 
         df_uf = entrada[entrada["UF"] == uf_selecionada]
