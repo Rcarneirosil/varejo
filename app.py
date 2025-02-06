@@ -156,36 +156,36 @@ try:
         st.subheader("📈 Margem por UF")
 
     # Agrupar os dados por UF
-    df_bolhas = entrada.groupby("UF").agg(
-        Faturamento_Total=("SaleAmt", "sum"),
-        Volume_Vendas=("SaleQt", "sum"),
-        Custo_Total=("SaleCostAmt", "sum")
-    ).reset_index()
+        df_bolhas = entrada.groupby("UF").agg(
+            Faturamento_Total=("SaleAmt", "sum"),
+            Volume_Vendas=("SaleQt", "sum"),
+            Custo_Total=("SaleCostAmt", "sum")
+        ).reset_index()
 
-    # Calcular a margem total
-    df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
+        # Calcular a margem total
+        df_bolhas["Margem_Total"] = 1 - (df_bolhas["Custo_Total"] / df_bolhas["Faturamento_Total"])
 
-    # Criar o gráfico de bolhas
-    fig = px.scatter(
-        df_bolhas,
-        x="Margem_Total",
-        y="Faturamento_Total",
-        size="Volume_Vendas",
-        text="UF",
-        hover_data={"Margem_Total": ":.2%"},
-        title="Faturamento x Volume de Vendas",
-        height=600,
-        size_max=60,  # Ajusta o tamanho máximo das bolhas
-    )
+        # Criar o gráfico de bolhas
+        fig = px.scatter(
+            df_bolhas,
+            x="Margem_Total",
+            y="Faturamento_Total",
+            size="Volume_Vendas",
+            text="UF",
+            hover_data={"Margem_Total": ":.2%"},
+            title="Faturamento x Volume de Vendas",
+            height=600,
+            size_max=60,  # Ajusta o tamanho máximo das bolhas
+        )
 
-    # Ajustar a escala dos eixos para deixar as bolhas mais próximas
-    fig.update_layout(
-        xaxis=dict(range=[df_bolhas["Margem_Total"].min() - 0.05, df_bolhas["Margem_Total"].max() + 0.05]),
-        yaxis=dict(range=[df_bolhas["Faturamento_Total"].min() - 1000, df_bolhas["Faturamento_Total"].max() + 1000]),
-    )
+        # Ajustar a escala dos eixos para deixar as bolhas mais próximas
+        fig.update_layout(
+            xaxis=dict(range=[df_bolhas["Margem_Total"].min() - 0.05, df_bolhas["Margem_Total"].max() + 0.05]),
+            yaxis=dict(range=[df_bolhas["Faturamento_Total"].min() - 1000, df_bolhas["Faturamento_Total"].max() + 1000]),
+        )
 
 # Exibir o gráfico no Streamlit
-st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 except Exception as e:
     st.error(f"❌ Erro ao carregar os dados: {e}")
