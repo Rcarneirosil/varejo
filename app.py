@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 from sklearn.linear_model import LinearRegression
+import plotly.graph_objects as go
 
 # Expandir a tela para largura total
 st.set_page_config(layout="wide")
