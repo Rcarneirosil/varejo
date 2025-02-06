@@ -153,7 +153,7 @@ try:
         st.dataframe(tabela_otimizada, height=400)
 
     with col4:
-        st.subheader("📈 Margem por UF")
+        st.subheader("📈 Faturamento, Volume e Margem por UF")
 
         df_bolhas = entrada.groupby("UF").agg(
         Faturamento_Total=("SaleAmt", "sum"),
